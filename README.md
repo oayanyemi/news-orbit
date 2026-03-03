@@ -1,59 +1,202 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# News Orbit Backend (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend implementation for a news aggregation challenge.
 
-## About Laravel
+## What This Project Does
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Aggregates and stores articles from 3 providers:
+  - The Guardian
+  - New York Times
+  - NewsAPI.org
+- Exposes backend APIs for:
+  - article listing and filtering
+  - client preferences
+  - NYT Top Stories-compatible endpoint
+- Runs scheduled sync hourly.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.2+
+- Laravel 12
+- MariaDB / MySQL
 
-## Learning Laravel
+## 1) Prerequisites
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Make sure these are installed and available in PATH:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- `php -v` (8.2+)
+- `composer -V`
+- MySQL or MariaDB server running
 
-## Laravel Sponsors
+Optional:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Node/NPM (not required for backend API testing)
 
-### Premium Partners
+## 2) Setup
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+From project root:
 
-## Contributing
+```bash
+composer install
+copy .env.example .env
+php artisan key:generate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Create a database, for example `news_orbit`, then set DB credentials in `.env`:
 
-## Code of Conduct
+```env
+DB_CONNECTION=mariadb
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=news_orbit
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Run migrations:
 
-## Security Vulnerabilities
+```bash
+php artisan migrate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 3) Required Environment Variables
 
-## License
+Set provider keys in `.env`:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```env
+GUARDIAN_API_KEY=
+NYT_API_KEY=
+NEWSAPI_API_KEY=
+```
+
+Useful tuning values:
+
+```env
+NEWS_DEFAULT_SYNC_WINDOW_HOURS=24
+NEWS_MAX_PAGES_PER_SOURCE=2
+NEWS_UPSERT_CHUNK_SIZE=50
+NEWS_FILTERS_CACHE_TTL_SECONDS=300
+```
+
+## 4) Run the Project
+
+Start API server:
+
+```bash
+php artisan serve
+```
+
+Initial sync:
+
+```bash
+php artisan news:sync
+```
+
+Sync one provider only:
+
+```bash
+php artisan news:sync --source=newsapi
+```
+
+Sync from specific datetime:
+
+```bash
+php artisan news:sync --from="2026-03-01 00:00:00"
+```
+
+## 5) Auto Updates (Scheduler)
+
+- `news:sync` is scheduled hourly in `bootstrap/app.php`.
+- For local execution of scheduled jobs, run:
+
+```bash
+php artisan schedule:work
+```
+
+## 6) Data Behavior
+
+- Articles are stored in `articles` table.
+- Sync uses bulk `upsert` with unique key:
+  - `source + external_id`
+- Existing records are updated when provider data changes.
+- New records are inserted.
+- Old records are retained unless explicitly deleted.
+
+## 7) Run Tests
+
+```bash
+php artisan test
+```
+
+## 8) API Endpoints
+
+### Aggregated Articles
+
+- `GET /api/articles`
+- `GET /api/articles/filters`
+
+Common query params for `/api/articles`:
+
+- `q`
+- `sources[]`
+- `categories[]`
+- `authors[]`
+- `from`
+- `to`
+- `client_id`
+- `per_page`
+
+### Preferences
+
+- `GET /api/preferences/{clientId}`
+- `PUT /api/preferences/{clientId}`
+
+### NYT-Compatible Top Stories
+
+- `GET /api/top-stories/{section}.json`
+
+Optional query params:
+
+- `limit`
+- `offset`
+
+## 9) API Docs and Postman
+
+- OpenAPI: `docs/openapi.yaml`
+- Postman collection: `docs/postman_collection.json`
+
+## 10) Quick Postman Test Flow
+
+1. `PUT /api/preferences/client-123`
+2. `GET /api/preferences/client-123`
+3. `GET /api/articles`
+4. `GET /api/articles?client_id=client-123`
+5. `GET /api/articles/filters`
+6. `GET /api/top-stories/home.json`
+7. `GET /api/top-stories/technology.json?limit=10&offset=0`
+
+## 11) Troubleshooting
+
+### Large packet error during sync
+
+If you see MySQL/MariaDB error:
+
+- `Got a packet bigger than 'max_allowed_packet' bytes`
+
+Lower chunk size:
+
+```env
+NEWS_UPSERT_CHUNK_SIZE=25
+```
+
+Then clear config cache:
+
+```bash
+php artisan optimize:clear
+```
+
+Re-run sync:
+
+```bash
+php artisan news:sync
+```
