@@ -1,0 +1,165 @@
+{
+  "info": {
+    "name": "News Orbit Backend API",
+    "_postman_id": "3b0c2d74-4d5f-4a96-9c3f-1af62b2d07a1",
+    "description": "Collection for testing News Orbit backend endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Articles",
+      "item": [
+        {
+          "name": "List Articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/articles",
+              "host": ["{{base_url}}"],
+              "path": ["api", "articles"]
+            }
+          }
+        },
+        {
+          "name": "Search Articles (query + filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/articles?q=AI&sources[]=guardian&categories[]=Technology&authors[]=Jane%20Doe&from=2026-03-01&to=2026-03-03&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "articles"],
+              "query": [
+                { "key": "q", "value": "AI" },
+                { "key": "sources[]", "value": "guardian" },
+                { "key": "categories[]", "value": "Technology" },
+                { "key": "authors[]", "value": "Jane Doe" },
+                { "key": "from", "value": "2026-03-01" },
+                { "key": "to", "value": "2026-03-03" },
+                { "key": "per_page", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Articles (apply saved client preference)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/articles?client_id={{client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "articles"],
+              "query": [
+                { "key": "client_id", "value": "{{client_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Article Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/articles/filters",
+              "host": ["{{base_url}}"],
+              "path": ["api", "articles", "filters"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Preferences",
+      "item": [
+        {
+          "name": "Get Preference",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/preferences/{{client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "preferences", "{{client_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Preference",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sources\": [\"guardian\", \"nyt\"],\n  \"categories\": [\"Technology\"],\n  \"authors\": [\"Jane Doe\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/preferences/{{client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "preferences", "{{client_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Top Stories Compatible",
+      "item": [
+        {
+          "name": "Top Stories Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/top-stories/home.json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "top-stories", "home.json"]
+            }
+          }
+        },
+        {
+          "name": "Top Stories by Section",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/top-stories/technology.json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "top-stories", "technology.json"]
+            }
+          }
+        },
+        {
+          "name": "Top Stories by Section (limit + offset)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/top-stories/technology.json?limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "top-stories", "technology.json"],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "client_id",
+      "value": "client-123"
+    }
+  ]
+}
